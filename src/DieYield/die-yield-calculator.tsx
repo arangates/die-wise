@@ -188,7 +188,7 @@ const DieYieldCalculator: React.FC = () => {
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target
     setParameters((previousParameters) => {
-      const newParameters = { ...previousParameters }
+      const newParameters: any = { ...previousParameters }
       if (name.includes(".")) {
         const [parent, child] = name.split(".")
         newParameters[parent] = {
@@ -207,7 +207,7 @@ const DieYieldCalculator: React.FC = () => {
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-8 bg-gray-100 p-6 md:flex-row">
+    <div className="mx-auto flex max-w-screen-2xl flex-col gap-8 bg-gray-100 p-6 md:flex-row">
       <Card className="flex-1">
         <CardContent className="p-6">
           <h1 className="text-primary mb-6 text-3xl font-bold">
