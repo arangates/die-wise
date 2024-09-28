@@ -67,7 +67,7 @@ const DieYieldCalculator: React.FC = () => {
   }
 
   const drawWaferMap = () => {
-    const size = 600
+    const size = 900
     const centerX = size / 2
     const centerY = size / 2
     const radius = size / 2 - 10
@@ -108,7 +108,7 @@ const DieYieldCalculator: React.FC = () => {
           exclusionRadius={exclusionRadius}
         />
         {dies}
-        <Labels size={size} />
+      <Labels size={size} />
       </svg>
     )
   }
@@ -298,7 +298,7 @@ const DieYieldCalculator: React.FC = () => {
 
   return (
     <div className="mx-auto flex flex-col gap-8 bg-gray-100 p-6 md:flex-row">
-      <Card className="flex-1">
+      <Card className="flex-auto">
         <CardContent className="p-6">
           <h1 className="text-primary mb-6 text-3xl font-bold">
             DIE YIELD CALCULATOR
@@ -345,17 +345,17 @@ const DieYieldCalculator: React.FC = () => {
             >
               Reset
             </Button>
+              <ResultsDisplay results={results} parameters={parameters} />
           </div>
         </CardContent>
       </Card>
 
       <Card className="flex-auto">
         <CardContent className="p-6">
-          <h2 className="mb-4 text-2xl font-semibold">WAFER MAP</h2>
           <div className="mb-4 rounded-lg bg-white p-4">{drawWaferMap()}</div>
-          <ResultsDisplay results={results} parameters={parameters} />
+          {/* <ResultsDisplay results={results} parameters={parameters} /> */}
         </CardContent>
-      </Card>
+      </Card>    
     </div>
   )
 }
