@@ -15,12 +15,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
 
 import type { DieCalculationParameters, DieCalculationResults } from "@/types"
-
 import { countDies } from "@/lib/countDies"
 import { calculateWaferParameters } from "@/lib/calculateWaferParameters"
 import { calculateNewYield } from "@/lib/calculateNewYield"
 import { isInWafer } from "@/lib/isInWafer"
-
 
 const INITIAL_PARAMETERS: DieCalculationParameters = {
   checkScribeLineWidth: false,
@@ -47,7 +45,6 @@ const INITIAL_RESULTS: DieCalculationResults = {
   yield: 0,
 }
 
-
 const DieYieldCalculator: React.FC = () => {
   const [parameters, setParameters] =
     useState<DieCalculationParameters>(INITIAL_PARAMETERS)
@@ -69,85 +66,147 @@ const DieYieldCalculator: React.FC = () => {
     setResults(newResults)
   }
 
-const drawWaferMap = () => {
-  const size = 600
-  const centerX = size / 2
-  const centerY = size / 2
-  const radius = size / 2 - 10
+  const drawWaferMap = () => {
+    const size = 600
+    const centerX = size / 2
+    const centerY = size / 2
+    const radius = size / 2 - 10
+    const exclusionRadius =
+      radius * (1 - parameters.edgeLoss / parameters.waferDiameter)
 
-  const exclusionRadius =
-    radius * (1 - parameters.edgeLoss / parameters.waferDiameter)
+    const reticle = {
+      horizontal:
+        parameters.dieSize.horizontal + parameters.dieSpacing.horizontal,
+      vertical: parameters.dieSize.vertical + parameters.dieSpacing.vertical,
+    }
 
-  const reticle = {
-    horizontal:
-      parameters.dieSize.horizontal + parameters.dieSpacing.horizontal,
-    vertical: parameters.dieSize.vertical + parameters.dieSpacing.vertical,
+    const dieCountHorizontal = Math.round(
+      parameters.waferDiameter / reticle.horizontal
+    )
+    const dieCountVertical = Math.round(
+      parameters.waferDiameter / reticle.vertical
+    )
+    const scale = size / parameters.waferDiameter
+
+    const dies = createDies(
+      dieCountHorizontal,
+      dieCountVertical,
+      reticle,
+      scale,
+      centerX,
+      centerY,
+      radius
+    )
+
+    return (
+      <svg width={size} height={size} className="aspect-square w-full">
+        <BackgroundGrid size={size} />
+        <WaferOutline
+          centerX={centerX}
+          centerY={centerY}
+          radius={radius}
+          exclusionRadius={exclusionRadius}
+        />
+        {dies}
+        <Labels size={size} />
+      </svg>
+    )
   }
 
-  const dieCountHorizontal = Math.round(
-    parameters.waferDiameter / reticle.horizontal
-  )
-  const dieCountVertical = Math.round(
-    parameters.waferDiameter / reticle.vertical
-  )
+  const createDies = (
+    dieCountHorizontal: number,
+    dieCountVertical: number,
+    reticle: any,
+    scale: number,
+    centerX: number,
+    centerY: number,
+    radius: number
+  ) => {
+    const dies = []
+    for (let x = 0; x < dieCountHorizontal; x++) {
+      for (let y = 0; y < dieCountVertical; y++) {
+        const { diePositionX, diePositionY, dieDimensionX, dieDimensionY } =
+          calculateDiePositionAndDimensions(
+            x,
+            y,
+            reticle,
+            scale,
+            centerX,
+            centerY
+          )
+        const dieInWafer = isInWafer(
+          diePositionX,
+          diePositionY,
+          dieDimensionX,
+          dieDimensionY,
+          radius * 2,
+          radius * 2 - parameters.edgeLoss * 2 * scale
+        )
 
-  const scale = size / parameters.waferDiameter
-  const dies = []
-
-  for (let x = 0; x < dieCountHorizontal; x++) {
-    for (let y = 0; y < dieCountVertical; y++) {
-      const offsetX =
-        parameters.dieSpacing.horizontal * 0.5 + parameters.horizontalShift
-      const offsetY =
-        parameters.dieSpacing.vertical * 0.5 + parameters.verticalShift
-
-      const diePositionX =
-        centerX +
-        (x - 0.5 * dieCountHorizontal) * reticle.horizontal * scale +
-        offsetX * scale
-      const diePositionY =
-        centerY +
-        (y - 0.5 * dieCountVertical) * reticle.vertical * scale +
-        offsetY * scale
-      const dieDimensionX = parameters.dieSize.horizontal * scale
-      const dieDimensionY = parameters.dieSize.vertical * scale
-
-      const dieInWafer = isInWafer(
-        diePositionX,
-        diePositionY,
-        dieDimensionX,
-        dieDimensionY,
-        size,
-        size - parameters.edgeLoss * 2 * scale
-      )
-
-      let dieColor = ""
-      if (dieInWafer === 1) {
-        dieColor = "rgba(70,200,70,0.8)" // Good dies
-      } else if (dieInWafer === 2) {
-        dieColor = "rgba(240,70,70,0.8)" // Wasted dies
-      } else if (dieInWafer === 4) {
-        dieColor = "rgba(220,210,0,0.8)" // Partial dies
-      } else {
-        continue // Skip dies outside the wafer
+        const dieColor = getDieColor(dieInWafer)
+        if (dieColor) {
+          dies.push(
+            <rect
+              key={`die-${x}-${y}`}
+              x={diePositionX}
+              y={diePositionY}
+              width={dieDimensionX}
+              height={dieDimensionY}
+              fill={dieColor}
+            />
+          )
+        }
       }
+    }
+    return dies
+  }
 
-      dies.push(
-        <rect
-          key={`die-${x}-${y}`}
-          x={diePositionX}
-          y={diePositionY}
-          width={dieDimensionX}
-          height={dieDimensionY}
-          fill={dieColor}
-        />
-      )
+  const calculateDiePositionAndDimensions = (
+    x: number,
+    y: number,
+    reticle: any,
+    scale: number,
+    centerX: number,
+    centerY: number
+  ) => {
+    const offsetX =
+      parameters.dieSpacing.horizontal * 0.5 + parameters.horizontalShift
+    const offsetY =
+      parameters.dieSpacing.vertical * 0.5 + parameters.verticalShift
+
+    const diePositionX =
+      centerX +
+      (x - 0.5 * Math.round(parameters.waferDiameter / reticle.horizontal)) *
+        reticle.horizontal *
+        scale +
+      offsetX * scale
+    const diePositionY =
+      centerY +
+      (y - 0.5 * Math.round(parameters.waferDiameter / reticle.vertical)) *
+        reticle.vertical *
+        scale +
+      offsetY * scale
+    const dieDimensionX = parameters.dieSize.horizontal * scale
+    const dieDimensionY = parameters.dieSize.vertical * scale
+
+    return { diePositionX, diePositionY, dieDimensionX, dieDimensionY }
+  }
+
+  const getDieColor = (dieInWafer: number) => {
+    switch (dieInWafer) {
+      case 1:
+        return "rgba(70,200,70,0.8)" // Good dies
+      case 2:
+        return "rgba(240,70,70,0.8)" // Wasted dies
+      case 4:
+        return "rgba(220,210,0,0.8)" // Partial dies
+      default:
+        return null // Skip dies outside the wafer
     }
   }
 
-  return (
-    <svg width={size} height={size} className="aspect-square w-full">
-      {/* Background grid */}
+  const BackgroundGrid: React.FC<{ size: number }> = ({ size }) => (
+    <>
       {[...Array(size / 10)].map((_, i) => (
         <line
           key={`vline-${i}`}
@@ -170,8 +229,16 @@ const drawWaferMap = () => {
           strokeWidth="0.5"
         />
       ))}
+    </>
+  )
 
-      {/* Wafer outline */}
+  const WaferOutline: React.FC<{
+    centerX: number
+    centerY: number
+    radius: number
+    exclusionRadius: number
+  }> = ({ centerX, centerY, radius, exclusionRadius }) => (
+    <>
       <circle
         cx={centerX}
         cy={centerY}
@@ -180,8 +247,6 @@ const drawWaferMap = () => {
         strokeWidth="2"
         fill="none"
       />
-
-      {/* Exclusion edge */}
       <circle
         cx={centerX}
         cy={centerY}
@@ -190,11 +255,11 @@ const drawWaferMap = () => {
         strokeWidth="2"
         fill="none"
       />
+    </>
+  )
 
-      {/* Dies */}
-      {dies}
-
-      {/* Labels */}
+  const Labels: React.FC<{ size: number }> = ({ size }) => (
+    <>
       <text x="10" y="30" fill="red" fontSize="16px" fontFamily="Arial">
         Wafer Limits
       </text>
@@ -207,14 +272,13 @@ const drawWaferMap = () => {
       >
         Exclusion Edge
       </text>
-    </svg>
+    </>
   )
-}
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target
-    setParameters((previousParameters) => {
-      const newParameters: any = { ...previousParameters }
+    setParameters((prev) => {
+      const newParameters: any = { ...prev }
       if (name.includes(".")) {
         const [parent, child] = name.split(".")
         newParameters[parent] = {
@@ -241,153 +305,40 @@ const drawWaferMap = () => {
           </h1>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="dieSize.horizontal">Die Width [w] (mm)</Label>
-                <Input
-                  id="dieSize.horizontal"
-                  name="dieSize.horizontal"
-                  type="number"
-                  value={parameters.dieSize.horizontal}
-                  onChange={handleInputChange}
-                  step="0.1"
-                  className="border-red-500"
-                />
-              </div>
-              <div>
-                <Label htmlFor="dieSize.vertical">Die Height [h] (mm)</Label>
-                <Input
-                  id="dieSize.vertical"
-                  name="dieSize.vertical"
-                  type="number"
-                  value={parameters.dieSize.vertical}
-                  onChange={handleInputChange}
-                  step="0.1"
-                  className="border-red-500"
-                />
-              </div>
-              <div>
-                <Label htmlFor="dieSpacing.horizontal">
-                  Horizontal Scribe Lane [sh] (mm)
-                </Label>
-                <Input
-                  id="dieSpacing.horizontal"
-                  name="dieSpacing.horizontal"
-                  type="number"
-                  value={parameters.dieSpacing.horizontal}
-                  onChange={handleInputChange}
-                  step="0.1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="dieSpacing.vertical">
-                  Vertical Scribe Lane [sv] (mm)
-                </Label>
-                <Input
-                  id="dieSpacing.vertical"
-                  name="dieSpacing.vertical"
-                  type="number"
-                  value={parameters.dieSpacing.vertical}
-                  onChange={handleInputChange}
-                  step="0.1"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="waferDiameter">Wafer Diameter (mm)</Label>
-              <Select
-                value={parameters.waferDiameter.toString()}
-                onValueChange={(value) =>
-                  setParameters((prev) => ({
-                    ...prev,
-                    waferDiameter: parseInt(value),
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="100">100 mm (4 in)</SelectItem>
-                  <SelectItem value="150">150 mm (6 in)</SelectItem>
-                  <SelectItem value="200">200 mm (8 in)</SelectItem>
-                  <SelectItem value="300">300 mm (12 in)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="edgeLoss">Edge Loss (mm)</Label>
-              <Input
-                id="edgeLoss"
-                name="edgeLoss"
-                type="number"
-                value={parameters.edgeLoss}
-                onChange={handleInputChange}
-                step="0.01"
-                className="border-green-500"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="defectDensity">Defect Density (#/sq.cm)</Label>
-              <Input
-                id="defectDensity"
-                name="defectDensity"
-                type="number"
-                value={parameters.defectDensity}
-                onChange={handleInputChange}
-                step="0.01"
-                className="border-green-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="horizontalShift">
-                  Manual wafer placement [horizontal shift]
-                </Label>
-                <Input
-                  id="horizontalShift"
-                  name="horizontalShift"
-                  type="number"
-                  value={parameters.horizontalShift}
-                  onChange={handleInputChange}
-                  className="border-blue-500"
-                />
-              </div>
-              <div>
-                <Label htmlFor="verticalShift">
-                  Manual wafer placement [vertical shift]
-                </Label>
-                <Input
-                  id="verticalShift"
-                  name="verticalShift"
-                  type="number"
-                  value={parameters.verticalShift}
-                  onChange={handleInputChange}
-                  className="border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="dieCentering"
-                checked={parameters.dieCentering}
-                onCheckedChange={(checked) =>
-                  setParameters((prev) => ({
-                    ...prev,
-                    dieCentering: checked as boolean,
-                  }))
-                }
-              />
-              <Label htmlFor="dieCentering">
-                Die Centering / Wafer Centering (check/uncheck)
-              </Label>
-            </div>
-
+            <ParameterInputs
+              parameters={parameters}
+              onChange={handleInputChange}
+            />
+            <WaferDiameterSelect
+              value={parameters.waferDiameter}
+              onChange={(value) =>
+                setParameters((prev) => ({
+                  ...prev,
+                  waferDiameter: parseInt(value),
+                }))
+              }
+            />
+            <SingleInput
+              label="Edge Loss (mm)"
+              name="edgeLoss"
+              value={parameters.edgeLoss}
+              onChange={handleInputChange}
+              className="border-green-500"
+            />
+            <SingleInput
+              label="Defect Density (#/sq.cm)"
+              name="defectDensity"
+              value={parameters.defectDensity}
+              onChange={handleInputChange}
+              className="border-green-500"
+            />
+            <ShiftInputs parameters={parameters} onChange={handleInputChange} />
+            <CheckboxInput
+              checked={parameters.dieCentering}
+              onChange={(checked) =>
+                setParameters((prev) => ({ ...prev, dieCentering: checked }))
+              }
+            />
             <Button
               onClick={handleReset}
               className="bg-red-500 text-white hover:bg-red-600"
@@ -402,37 +353,148 @@ const drawWaferMap = () => {
         <CardContent className="p-6">
           <h2 className="mb-4 text-2xl font-semibold">WAFER MAP</h2>
           <div className="mb-4 rounded-lg bg-white p-4">{drawWaferMap()}</div>
-
-          <div className="space-y-2 text-sm">
-            <p className="text-green-500">
-              Defect Density {parameters.defectDensity} #/sq.cm
-            </p>
-            <p className="text-green-500">
-              Fabrication Yield = {results.yield}%
-            </p>
-            <p className="text-red-500">
-              Wasted Dies #{results.excludedDevices}
-            </p>
-            <p className="text-gray-500">
-              Defective Dies #
-              {results.goodDevices -
-                Math.round((results.yield / 100) * results.goodDevices)}
-            </p>
-            <p className="text-green-500">
-              Good Dies #
-              {Math.round((results.yield / 100) * results.goodDevices)}
-            </p>
-            <p className="text-yellow-500">
-              Partial Dies #{results.partialDevices}
-            </p>
-            <p className="font-semibold text-black">
-              Max Dies Per Wafer (without defect) #{results.goodDevices}
-            </p>
-          </div>
+          <ResultsDisplay results={results} parameters={parameters} />
         </CardContent>
       </Card>
     </div>
   )
 }
+
+const ParameterInputs: React.FC<{
+  parameters: DieCalculationParameters
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+}> = ({ parameters, onChange }) => (
+  <div className="grid grid-cols-2 gap-4">
+    <SingleInput
+      label="Die Width [w] (mm)"
+      name="dieSize.horizontal"
+      value={parameters.dieSize.horizontal}
+      onChange={onChange}
+      step="0.1"
+      className="border-red-500"
+    />
+    <SingleInput
+      label="Die Height [h] (mm)"
+      name="dieSize.vertical"
+      value={parameters.dieSize.vertical}
+      onChange={onChange}
+      step="0.1"
+      className="border-red-500"
+    />
+    <SingleInput
+      label="Horizontal Scribe Lane [sh] (mm)"
+      name="dieSpacing.horizontal"
+      value={parameters.dieSpacing.horizontal}
+      onChange={onChange}
+      step="0.1"
+    />
+    <SingleInput
+      label="Vertical Scribe Lane [sv] (mm)"
+      name="dieSpacing.vertical"
+      value={parameters.dieSpacing.vertical}
+      onChange={onChange}
+      step="0.1"
+    />
+  </div>
+)
+
+const SingleInput: React.FC<{
+  label: string
+  name: string
+  value: number
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  step?: string
+  className?: string
+}> = ({ label, name, value, onChange, step, className }) => (
+  <div>
+    <Label htmlFor={name}>{label}</Label>
+    <Input
+      id={name}
+      name={name}
+      type="number"
+      value={value}
+      onChange={onChange}
+      step={step}
+      className={className}
+    />
+  </div>
+)
+
+const WaferDiameterSelect: React.FC<{
+  value: number
+  onChange: (value: string) => void
+}> = ({ value, onChange }) => (
+  <div>
+    <Label htmlFor="waferDiameter">Wafer Diameter (mm)</Label>
+    <Select value={value.toString()} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="100">100 mm (4 in)</SelectItem>
+        <SelectItem value="150">150 mm (6 in)</SelectItem>
+        <SelectItem value="200">200 mm (8 in)</SelectItem>
+        <SelectItem value="300">300 mm (12 in)</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+)
+
+const ShiftInputs: React.FC<{
+  parameters: DieCalculationParameters
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+}> = ({ parameters, onChange }) => (
+  <div className="grid grid-cols-2 gap-4">
+    <SingleInput
+      label="Manual wafer placement [horizontal shift]"
+      name="horizontalShift"
+      value={parameters.horizontalShift}
+      onChange={onChange}
+    />
+    <SingleInput
+      label="Manual wafer placement [vertical shift]"
+      name="verticalShift"
+      value={parameters.verticalShift}
+      onChange={onChange}
+    />
+  </div>
+)
+
+const CheckboxInput: React.FC<{
+  checked: boolean
+  onChange: (checked: boolean) => void
+}> = ({ checked, onChange }) => (
+  <div className="flex items-center space-x-2">
+    <Checkbox id="dieCentering" checked={checked} onCheckedChange={onChange} />
+    <Label htmlFor="dieCentering">
+      Die Centering / Wafer Centering (check/uncheck)
+    </Label>
+  </div>
+)
+
+const ResultsDisplay: React.FC<{
+  results: DieCalculationResults
+  parameters: DieCalculationParameters
+}> = ({ results, parameters }) => (
+  <div className="space-y-2 text-sm">
+    <p className="text-green-500">
+      Defect Density {parameters.defectDensity} #/sq.cm
+    </p>
+    <p className="text-green-500">Fabrication Yield = {results.yield}%</p>
+    <p className="text-red-500">Wasted Dies #{results.excludedDevices}</p>
+    <p className="text-gray-500">
+      Defective Dies #
+      {results.goodDevices -
+        Math.round((results.yield / 100) * results.goodDevices)}
+    </p>
+    <p className="text-green-500">
+      Good Dies #{Math.round((results.yield / 100) * results.goodDevices)}
+    </p>
+    <p className="text-yellow-500">Partial Dies #{results.partialDevices}</p>
+    <p className="font-semibold text-black">
+      Max Dies Per Wafer (without defect) #{results.goodDevices}
+    </p>
+  </div>
+)
 
 export default DieYieldCalculator
