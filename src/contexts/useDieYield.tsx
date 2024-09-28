@@ -12,10 +12,15 @@ interface DieYieldContextProps {
   resetParameters: () => void
 }
 
-const DieYieldContext = createContext<DieYieldContextProps | undefined>(undefined)
+const DieYieldContext = createContext<DieYieldContextProps | undefined>(
+  undefined
+)
 
-export const DieYieldProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [parameters, setParameters] = useState<DieCalculationParameters>(INITIAL_PARAMETERS)
+export const DieYieldProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [parameters, setParameters] =
+    useState<DieCalculationParameters>(INITIAL_PARAMETERS)
   const [results, setResults] = useState<DieCalculationResults>(INITIAL_RESULTS)
 
   useEffect(() => {
@@ -35,7 +40,9 @@ export const DieYieldProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }
 
   return (
-    <DieYieldContext.Provider value={{ parameters, results, setParameters, resetParameters }}>
+    <DieYieldContext.Provider
+      value={{ parameters, results, setParameters, resetParameters }}
+    >
       {children}
     </DieYieldContext.Provider>
   )

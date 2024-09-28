@@ -22,21 +22,25 @@ The Die Wise is a sophisticated tool designed for semiconductor manufacturing pr
 ## Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/arangates/die-wise.git
    ```
 
 2. Navigate to the project directory:
+
    ```bash
    cd die-wise
    ```
 
 3. Install dependencies:
+
    ```bash
    npm install
    ```
 
 4. Start the development server:
+
    ```bash
    npm run dev
    ```
@@ -62,7 +66,6 @@ The Die Wise is a sophisticated tool designed for semiconductor manufacturing pr
 - **Excluded Dies**: Dies in the edge exclusion zone.
 - **Yield Estimation**: Based on defect density and die area.
 
-
 ## License
 
 This project is licensed under the MIT License.
@@ -70,7 +73,8 @@ This project is licensed under the MIT License.
 ## Acknowledgments
 
 - Inspired by the needs of semiconductor manufacturing professionals
--Wafer Map Estimation using Murphy’s Model of Die Yield
+  -Wafer Map Estimation using Murphy’s Model of Die Yield
+
 ## Contact
 
 For questions, suggestions, or support, please open an issue in the GitHub repository

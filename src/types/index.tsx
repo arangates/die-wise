@@ -22,3 +22,12 @@ export type DieCalculationResults = {
   excludedDevices: number
   yield: number
 }
+
+export type Die = {
+  key: string
+  x: number
+  y: number
+  width: number
+  height: number
+  fill: string
+}

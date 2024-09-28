@@ -13,7 +13,6 @@ export const ParameterInputs: React.FC<{
       value={parameters.dieSize.horizontal}
       onChange={onChange}
       step="0.1"
-      className="border-red-500"
     />
     <SingleInput
       label="Die Height [h] (mm)"
@@ -21,7 +20,6 @@ export const ParameterInputs: React.FC<{
       value={parameters.dieSize.vertical}
       onChange={onChange}
       step="0.1"
-      className="border-red-500"
     />
     <SingleInput
       label="Horizontal Scribe Lane [sh] (mm)"

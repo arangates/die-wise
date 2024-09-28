@@ -1,5 +1,5 @@
 import type { DieCalculationParameters, DieCalculationResults } from "@/types"
-import { isInWafer } from "./isInWafer"
+import { getDieStatus } from "./getDieStatus"
 
 export const countDies = (
   parameters: DieCalculationParameters,
@@ -47,7 +47,7 @@ export const countDies = (
       const dieDimensionX = parameters.dieSize.horizontal
       const dieDimensionY = parameters.dieSize.vertical
 
-      const dieInWafer = isInWafer(
+      const diePositionInWafer = getDieStatus(
         diePositionX,
         diePositionY,
         dieDimensionX,
@@ -57,9 +57,9 @@ export const countDies = (
       )
 
       // Increment counters based on die position
-      if (dieInWafer === 4) results.partialDevices++
-      if (dieInWafer === 2) results.excludedDevices++
-      if (dieInWafer === 1) results.goodDevices++
+      if (diePositionInWafer === 4) results.partialDevices++
+      if (diePositionInWafer === 2) results.excludedDevices++
+      if (diePositionInWafer === 1) results.goodDevices++
     }
   }
 

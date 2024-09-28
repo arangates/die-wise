@@ -1,4 +1,4 @@
-export const isInWafer = (
+export const getDieStatus = (
   diePositionX: number,
   diePositionY: number,
   dieDimensionX: number,
