@@ -1,4 +1,4 @@
-import DieYieldCalculator from "./DieYield"
+import DieYieldCalculator from "./components/DieYield"
 
 function App() {
   return <DieYieldCalculator />

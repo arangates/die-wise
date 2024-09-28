@@ -1,24 +1,24 @@
 "use client"
 
-import { useRef, useState, useEffect } from "react"
+import { useEffect, useState } from "react"
+import type { DieCalculationParameters, DieCalculationResults } from "@/types"
+
+import { calculateNewYield } from "@/lib/calculateNewYield"
+import { calculateWaferParameters } from "@/lib/calculateWaferParameters"
+import { countDies } from "@/lib/countDies"
+import { isInWafer } from "@/lib/isInWafer"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent } from "@/components/ui/card"
-
-import type { DieCalculationParameters, DieCalculationResults } from "@/types"
-import { countDies } from "@/lib/countDies"
-import { calculateWaferParameters } from "@/lib/calculateWaferParameters"
-import { calculateNewYield } from "@/lib/calculateNewYield"
-import { isInWafer } from "@/lib/isInWafer"
 
 const INITIAL_PARAMETERS: DieCalculationParameters = {
   checkScribeLineWidth: false,
