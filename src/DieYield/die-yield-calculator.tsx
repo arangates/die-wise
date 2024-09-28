@@ -13,11 +13,13 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
-import type { DieCalculationParameters, DieCalculationResults } from "./types"
-import { countDies } from "./utils/countDies"
-import { calculateWaferParameters } from "./utils/calculateWaferParameters"
-import { calculateNewYield } from "./utils/calculateNewYield"
-import { isInWafer } from "./utils/isInWafer"
+
+import type { DieCalculationParameters, DieCalculationResults } from "@/types"
+
+import { countDies } from "@/lib/countDies"
+import { calculateWaferParameters } from "@/lib/calculateWaferParameters"
+import { calculateNewYield } from "@/lib/calculateNewYield"
+import { isInWafer } from "@/lib/isInWafer"
 
 
 const INITIAL_PARAMETERS: DieCalculationParameters = {
@@ -47,7 +49,6 @@ const INITIAL_RESULTS: DieCalculationResults = {
 
 
 const DieYieldCalculator: React.FC = () => {
-  const canvasReference = useRef<HTMLCanvasElement>(null)
   const [parameters, setParameters] =
     useState<DieCalculationParameters>(INITIAL_PARAMETERS)
   const [results, setResults] = useState<DieCalculationResults>(INITIAL_RESULTS)
@@ -68,122 +69,147 @@ const DieYieldCalculator: React.FC = () => {
     setResults(newResults)
   }
 
-  const drawWaferMap = () => {
-    const canvas = canvasReference.current
-    if (!canvas) return
+const drawWaferMap = () => {
+  const size = 600
+  const centerX = size / 2
+  const centerY = size / 2
+  const radius = size / 2 - 10
 
-    const context = canvas.getContext("2d")
-    if (!context) return
+  const exclusionRadius =
+    radius * (1 - parameters.edgeLoss / parameters.waferDiameter)
 
-    const size = 600
-    canvas.width = size
-    canvas.height = size
-    const centerX = size / 2
-    const centerY = size / 2
-    const radius = size / 2 - 10
-
-    // Clear canvas
-    context.clearRect(0, 0, size, size)
-
-    // Draw background grid
-    context.strokeStyle = "#e0e0e0"
-    context.lineWidth = 0.5
-    for (let i = 0; i < size; i += 10) {
-      context.beginPath()
-      context.moveTo(i, 0)
-      context.lineTo(i, size)
-      context.stroke()
-      context.beginPath()
-      context.moveTo(0, i)
-      context.lineTo(size, i)
-      context.stroke()
-    }
-
-    // Draw wafer outline
-    context.beginPath()
-    context.arc(centerX, centerY, radius, 0, 2 * Math.PI)
-    context.strokeStyle = "red"
-    context.lineWidth = 2
-    context.stroke()
-
-    // Draw exclusion edge
-    const exclusionRadius =
-      radius * (1 - parameters.edgeLoss / parameters.waferDiameter)
-    context.beginPath()
-    context.arc(centerX, centerY, exclusionRadius, 0, 2 * Math.PI)
-    context.strokeStyle = "green"
-    context.lineWidth = 2
-    context.stroke()
-
-    // Draw dies
-    const reticle = {
-      horizontal:
-        parameters.dieSize.horizontal + parameters.dieSpacing.horizontal,
-      vertical: parameters.dieSize.vertical + parameters.dieSpacing.vertical,
-    }
-
-    const dieCountHorizontal = Math.round(
-      parameters.waferDiameter / reticle.horizontal
-    )
-    const dieCountVertical = Math.round(
-      parameters.waferDiameter / reticle.vertical
-    )
-
-    const scale = size / parameters.waferDiameter
-
-    for (let x = 0; x < dieCountHorizontal; x++) {
-      for (let y = 0; y < dieCountVertical; y++) {
-        const offsetX =
-          parameters.dieSpacing.horizontal * 0.5 + parameters.horizontalShift
-        const offsetY =
-          parameters.dieSpacing.vertical * 0.5 + parameters.verticalShift
-
-        const diePositionX =
-          centerX +
-          (x - 0.5 * dieCountHorizontal) * reticle.horizontal * scale +
-          offsetX * scale
-        const diePositionY =
-          centerY +
-          (y - 0.5 * dieCountVertical) * reticle.vertical * scale +
-          offsetY * scale
-        const dieDimensionX = parameters.dieSize.horizontal * scale
-        const dieDimensionY = parameters.dieSize.vertical * scale
-
-        const dieInWafer = isInWafer(
-          diePositionX,
-          diePositionY,
-          dieDimensionX,
-          dieDimensionY,
-          size,
-          size - parameters.edgeLoss * 2 * scale
-        )
-
-        if (dieInWafer === 1) {
-          context.fillStyle = "rgba(70,200,70,0.8)" // Good dies
-        } else if (dieInWafer === 2) {
-          context.fillStyle = "rgba(240,70,70,0.8)" // Wasted dies
-        } else if (dieInWafer === 4) {
-          context.fillStyle = "rgba(220,210,0,0.8)" // Partial dies
-        } else {
-          continue // Skip dies outside the wafer
-        }
-
-        context.fillRect(
-          diePositionX,
-          diePositionY,
-          dieDimensionX,
-          dieDimensionY
-        )
-      }
-    }
-
-    // Add labels
-    context.font = "16px Arial"
-    context.fillStyle = "red"
-    context.fillText("Wafer Limits", 10, 30)
-    context.fillStyle = "green"
-    context.fillText("Exclusion Edge", size - 120, size - 20)
+  const reticle = {
+    horizontal:
+      parameters.dieSize.horizontal + parameters.dieSpacing.horizontal,
+    vertical: parameters.dieSize.vertical + parameters.dieSpacing.vertical,
   }
+
+  const dieCountHorizontal = Math.round(
+    parameters.waferDiameter / reticle.horizontal
+  )
+  const dieCountVertical = Math.round(
+    parameters.waferDiameter / reticle.vertical
+  )
+
+  const scale = size / parameters.waferDiameter
+  const dies = []
+
+  for (let x = 0; x < dieCountHorizontal; x++) {
+    for (let y = 0; y < dieCountVertical; y++) {
+      const offsetX =
+        parameters.dieSpacing.horizontal * 0.5 + parameters.horizontalShift
+      const offsetY =
+        parameters.dieSpacing.vertical * 0.5 + parameters.verticalShift
+
+      const diePositionX =
+        centerX +
+        (x - 0.5 * dieCountHorizontal) * reticle.horizontal * scale +
+        offsetX * scale
+      const diePositionY =
+        centerY +
+        (y - 0.5 * dieCountVertical) * reticle.vertical * scale +
+        offsetY * scale
+      const dieDimensionX = parameters.dieSize.horizontal * scale
+      const dieDimensionY = parameters.dieSize.vertical * scale
+
+      const dieInWafer = isInWafer(
+        diePositionX,
+        diePositionY,
+        dieDimensionX,
+        dieDimensionY,
+        size,
+        size - parameters.edgeLoss * 2 * scale
+      )
+
+      let dieColor = ""
+      if (dieInWafer === 1) {
+        dieColor = "rgba(70,200,70,0.8)" // Good dies
+      } else if (dieInWafer === 2) {
+        dieColor = "rgba(240,70,70,0.8)" // Wasted dies
+      } else if (dieInWafer === 4) {
+        dieColor = "rgba(220,210,0,0.8)" // Partial dies
+      } else {
+        continue // Skip dies outside the wafer
+      }
+
+      dies.push(
+        <rect
+          key={`die-${x}-${y}`}
+          x={diePositionX}
+          y={diePositionY}
+          width={dieDimensionX}
+          height={dieDimensionY}
+          fill={dieColor}
+        />
+      )
+    }
+  }
+
+  return (
+    <svg width={size} height={size} className="aspect-square w-full">
+      {/* Background grid */}
+      {[...Array(size / 10)].map((_, i) => (
+        <line
+          key={`vline-${i}`}
+          x1={i * 10}
+          y1="0"
+          x2={i * 10}
+          y2={size}
+          stroke="#e0e0e0"
+          strokeWidth="0.5"
+        />
+      ))}
+      {[...Array(size / 10)].map((_, i) => (
+        <line
+          key={`hline-${i}`}
+          x1="0"
+          y1={i * 10}
+          x2={size}
+          y2={i * 10}
+          stroke="#e0e0e0"
+          strokeWidth="0.5"
+        />
+      ))}
+
+      {/* Wafer outline */}
+      <circle
+        cx={centerX}
+        cy={centerY}
+        r={radius}
+        stroke="red"
+        strokeWidth="2"
+        fill="none"
+      />
+
+      {/* Exclusion edge */}
+      <circle
+        cx={centerX}
+        cy={centerY}
+        r={exclusionRadius}
+        stroke="green"
+        strokeWidth="2"
+        fill="none"
+      />
+
+      {/* Dies */}
+      {dies}
+
+      {/* Labels */}
+      <text x="10" y="30" fill="red" fontSize="16px" fontFamily="Arial">
+        Wafer Limits
+      </text>
+      <text
+        x={size - 120}
+        y={size - 20}
+        fill="green"
+        fontSize="16px"
+        fontFamily="Arial"
+      >
+        Exclusion Edge
+      </text>
+    </svg>
+  )
+}
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target
@@ -207,16 +233,12 @@ const DieYieldCalculator: React.FC = () => {
   }
 
   return (
-    <div className="mx-auto flex max-w-screen-2xl flex-col gap-8 bg-gray-100 p-6 md:flex-row">
+    <div className="mx-auto flex flex-col gap-8 bg-gray-100 p-6 md:flex-row">
       <Card className="flex-1">
         <CardContent className="p-6">
           <h1 className="text-primary mb-6 text-3xl font-bold">
             DIE YIELD CALCULATOR
           </h1>
-          <p className="text-muted-foreground mb-6">
-            Calculating the number of Dies Per Wafer (DPW) is a straightforward
-            task. Our free Die Per Wafer calculator is simple to use.
-          </p>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -376,15 +398,10 @@ const DieYieldCalculator: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card className="flex-1">
+      <Card className="flex-auto">
         <CardContent className="p-6">
           <h2 className="mb-4 text-2xl font-semibold">WAFER MAP</h2>
-          <div className="mb-4 rounded-lg bg-white p-4">
-            <canvas
-              ref={canvasReference}
-              className="aspect-square w-full"
-            ></canvas>
-          </div>
+          <div className="mb-4 rounded-lg bg-white p-4">{drawWaferMap()}</div>
 
           <div className="space-y-2 text-sm">
             <p className="text-green-500">
