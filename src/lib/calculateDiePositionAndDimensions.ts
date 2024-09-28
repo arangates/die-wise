@@ -1,4 +1,4 @@
-import { DieCalculationParameters } from "@/types"
+import type { DieCalculationParameters } from "@/types"
 
   export const calculateDiePositionAndDimensions = (
     x: number,

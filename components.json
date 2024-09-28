@@ -16,6 +16,9 @@
     "ui": "@/components/ui",
     "lib": "@/lib",
     "hooks": "@/hooks",
-    "types": "@/types"
+    "contexts": "@/contexts",
+    "types": "@/types",
+    "blocks": "@/blocks",
+    "pages": "@/pages"
   }
 }

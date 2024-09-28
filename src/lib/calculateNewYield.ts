@@ -1,4 +1,4 @@
-import { DieCalculationParameters, DieCalculationResults } from "../types"
+import type { DieCalculationParameters, DieCalculationResults } from "@/types"
 
 export const calculateNewYield = (
   parameters: DieCalculationParameters,

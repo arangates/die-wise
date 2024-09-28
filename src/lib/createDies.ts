@@ -1,4 +1,4 @@
-import { DieCalculationParameters } from "@/types"
+import type { DieCalculationParameters } from "@/types"
 import { calculateDiePositionAndDimensions } from "./calculateDiePositionAndDimensions"
 import { getDieColor } from "./getDieColor"
 import { isInWafer } from "./isInWafer"
