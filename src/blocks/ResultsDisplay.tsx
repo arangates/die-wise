@@ -1,27 +1,116 @@
-import React from "react"
-import type { DieCalculationParameters, DieCalculationResults } from "@/types"
+"use client"
+
+import * as React from "react"
+import { TrendingUp } from "lucide-react"
+import { Label, Pie, PieChart } from "recharts"
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
+import { DieCalculationParameters, DieCalculationResults } from "@/types"
+
+export const description = "Die Yield Results"
+
+const chartData = (results: DieCalculationResults) => [
+  { status: "Good", wafers: Math.round((results.yield / 100) * results.goodDevices), fill: "var(--color-good)" },
+  { status: "Partial", wafers: results.excludedDevices, fill: "var(--color-partial)" },
+  { status: "Defective", wafers: results.goodDevices - Math.round((results.yield / 100) * results.goodDevices), fill: "var(--color-defective)" },
+]
+
+const chartConfig = {
+  defective: {
+    label: "Defective",
+    color: "hsl(var(--chart-3))",
+  },
+  good: {
+    label: "Good",
+    color: "hsl(var(--chart-4))",
+  },
+  partial: {
+    label: "Partial",
+    color: "hsl(var(--chart-5))",
+  },
+} satisfies ChartConfig
 
 export const ResultsDisplay: React.FC<{
-  results: DieCalculationResults
   parameters: DieCalculationParameters
-}> = ({ results, parameters }) => (
-  <div className="space-y-2 text-sm">
-    <p className="text-green-500">
-      Defect Density {parameters.defectDensity} #/sq.cm
-    </p>
-    <p className="text-green-500">Fabrication Yield = {results.yield}%</p>
-    <p className="text-red-500">Wasted Dies #{results.excludedDevices}</p>
-    <p className="text-gray-500">
-      Defective Dies #
-      {results.goodDevices -
-        Math.round((results.yield / 100) * results.goodDevices)}
-    </p>
-    <p className="text-green-500">
-      Good Dies #{Math.round((results.yield / 100) * results.goodDevices)}
-    </p>
-    <p className="text-yellow-500">Partial Dies #{results.partialDevices}</p>
-    <p className="font-semibold text-black">
-      Max Dies Per Wafer (without defect) #{results.goodDevices}
-    </p>
-  </div>
-)
+  results: DieCalculationResults
+}> = ({ parameters, results }) => {
+  const totalDevices = results.goodDevices + results.partialDevices + results.excludedDevices
+  return (
+    <Card className="flex flex-col">
+      <CardHeader className="items-center pb-0">
+        <CardTitle>Die Yield Results</CardTitle>
+      </CardHeader>
+      <CardContent className="flex-1 pb-0">
+        <ChartContainer
+          config={chartConfig}
+          className="mx-auto aspect-square max-h-[250px]"
+        >
+          <PieChart>
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent hideLabel />}
+            />
+            <Pie
+              data={chartData(results)}
+              dataKey="wafers"
+              nameKey="status"
+              innerRadius={60}
+              strokeWidth={5}
+            >
+              <Label
+                content={({ viewBox }) => {
+                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                    return (
+                      <text
+                        x={viewBox.cx}
+                        y={viewBox.cy}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                      >
+                        <tspan
+                          x={viewBox.cx}
+                          y={viewBox.cy}
+                          className="fill-foreground text-3xl font-bold"
+                        >
+                          {totalDevices.toLocaleString()}
+                        </tspan>
+                        <tspan
+                          x={viewBox.cx}
+                          y={(viewBox.cy || 0) + 24}
+                          className="fill-muted-foreground"
+                        >
+                          Dies
+                        </tspan>
+                      </text>
+                    )
+                  }
+                }}
+              />
+            </Pie>
+          </PieChart>
+        </ChartContainer>
+      </CardContent>
+      <CardFooter className="flex-col gap-2 text-sm">
+        <div className="flex items-center gap-2 font-medium leading-none">
+          Defect density {parameters.defectDensity} #/sq.cm<TrendingUp className="h-4 w-4" />
+        </div>
+        <div className="leading-none text-muted-foreground">
+          Fabrication yield {results.yield}%
+        </div>
+      </CardFooter>
+    </Card>
+  )
+}

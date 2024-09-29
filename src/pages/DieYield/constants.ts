@@ -8,7 +8,7 @@ export const INITIAL_PARAMETERS: DieCalculationParameters = {
   dieSpacing: { horizontal: 0.2, vertical: 0.2 },
   waferDiameter: 100,
   edgeLoss: 5.0,
-  defectDensity: 0.1,
+  defectDensity: 5,
   dieCentering: true,
   verticalShift: 0,
   horizontalShift: 0,
