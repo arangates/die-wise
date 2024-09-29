@@ -7,7 +7,6 @@ import { Label, Pie, PieChart } from "recharts"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -24,22 +23,27 @@ export const description = "Die Yield Results"
 
 const chartData = (results: DieCalculationResults) => [
   { status: "Good", wafers: Math.round((results.yield / 100) * results.goodDevices), fill: "var(--color-good)" },
-  { status: "Partial", wafers: results.excludedDevices, fill: "var(--color-partial)" },
+  { status: "Wasted", wafers: results.excludedDevices, fill: "var(--color-wasted)" },
+  { status: "Partial", wafers: results.partialDevices, fill: "var(--color-partial)" },
   { status: "Defective", wafers: results.goodDevices - Math.round((results.yield / 100) * results.goodDevices), fill: "var(--color-defective)" },
 ]
 
 const chartConfig = {
-  defective: {
-    label: "Defective",
-    color: "hsl(var(--chart-3))",
-  },
   good: {
     label: "Good",
-    color: "hsl(var(--chart-4))",
+    color: "hsl(var(--chart-good))",
+  },
+  wasted: {
+    label: "Wasted",
+    color: "hsl(var(--chart-wasted))",
   },
   partial: {
     label: "Partial",
-    color: "hsl(var(--chart-5))",
+    color: "hsl(var(--chart-partial))",
+  },
+  defective: {
+    label: "Defective",
+    color: "hsl(var(--chart-defective))",
   },
 } satisfies ChartConfig
 
