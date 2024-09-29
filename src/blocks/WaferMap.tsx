@@ -12,7 +12,7 @@ export const WaferMap = ({
   const size = 900
   const centerX = size / 2
   const centerY = size / 2
-  const radius = size / 2 
+  const radius = size / 2
   const exclusionRadius =
     radius * (1 - parameters.edgeLoss / parameters.waferDiameter)
 

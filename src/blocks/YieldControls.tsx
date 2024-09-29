@@ -63,4 +63,4 @@ const YieldControls: React.FC = () => {
   )
 }
 
-export { YieldControls}
+export { YieldControls }

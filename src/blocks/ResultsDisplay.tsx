@@ -22,10 +22,28 @@ import { DieCalculationParameters, DieCalculationResults } from "@/types"
 export const description = "Die Yield Results"
 
 const chartData = (results: DieCalculationResults) => [
-  { status: "Good", wafers: Math.round((results.yield / 100) * results.goodDevices), fill: "var(--color-good)" },
-  { status: "Wasted", wafers: results.excludedDevices, fill: "var(--color-wasted)" },
-  { status: "Partial", wafers: results.partialDevices, fill: "var(--color-partial)" },
-  { status: "Defective", wafers: results.goodDevices - Math.round((results.yield / 100) * results.goodDevices), fill: "var(--color-defective)" },
+  {
+    status: "Good",
+    wafers: Math.round((results.yield / 100) * results.goodDevices),
+    fill: "var(--color-good)",
+  },
+  {
+    status: "Wasted",
+    wafers: results.excludedDevices,
+    fill: "var(--color-wasted)",
+  },
+  {
+    status: "Partial",
+    wafers: results.partialDevices,
+    fill: "var(--color-partial)",
+  },
+  {
+    status: "Defective",
+    wafers:
+      results.goodDevices -
+      Math.round((results.yield / 100) * results.goodDevices),
+    fill: "var(--color-defective)",
+  },
 ]
 
 const chartConfig = {
@@ -51,7 +69,8 @@ export const ResultsDisplay: React.FC<{
   parameters: DieCalculationParameters
   results: DieCalculationResults
 }> = ({ parameters, results }) => {
-  const totalDevices = results.goodDevices + results.partialDevices + results.excludedDevices
+  const totalDevices =
+    results.goodDevices + results.partialDevices + results.excludedDevices
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
@@ -109,9 +128,10 @@ export const ResultsDisplay: React.FC<{
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm">
         <div className="flex items-center gap-2 font-medium leading-none">
-          Defect density {parameters.defectDensity} #/sq.cm<TrendingUp className="h-4 w-4" />
+          Defect density {parameters.defectDensity} #/sq.cm
+          <TrendingUp className="h-4 w-4" />
         </div>
-        <div className="leading-none text-muted-foreground">
+        <div className="text-muted-foreground leading-none">
           Fabrication yield {results.yield}%
         </div>
       </CardFooter>
